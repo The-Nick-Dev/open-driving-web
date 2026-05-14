@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">Nueva Pregunta - Autoescuela</title>
+    <link rel="icon" type="image/x-icon" href="/images/logo.ico">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/profesor.css">
+    <script src="/js/jwt-helper.js"></script>
+</head>
+<body class="admin-layout">
+    <div class="sidebar">
+        <h3 id="nombreEmpresa"></h3>
+        <ul>
+            <li><a href="/profesor/preguntas" class="active">Preguntas</a></li>
+            <li><a href="/profesor/temas">Temas</a></li>
+        </ul>
+        <div class="logout-form">
+            <button type="button" onclick="logout()" class="btn-primary" style="width:100%;">Cerrar sesión</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1 id="tituloForm">Nueva Pregunta</h1>
+        </div>
+
+        <div id="errorMsg" style="display:none; padding:15px; background:#f8d7da; color:#721c24; border-radius:5px; margin-bottom:15px;"></div>
+
+        <div class="content-area">
+            <div class="form-container">
+                <form id="preguntaForm">
+                    <input type="hidden" id="preguntaId" value="">
+
+                    <div class="form-group">
+                        <h4>Pregunta</h4>
+                        <textarea id="textoPregunta" rows="3" required class="form-control"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <h4>Tema</h4>
+                        <select id="temaId" required class="form-control">
+                            <option value="">-- Seleccione un tema --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <h4>Explicación</h4>
+                        <textarea id="explicacion" rows="3" class="form-control"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <h4>Respuestas</h4>
+                        <div class="ayuda-texto" style="margin-bottom: 10px;">Rellene solo las respuestas que quiera. Las que deje vacias se ignoraran. Solo una respuesta puede ser correcta.</div>
+                        
+                        <table class="respuestas-tabla">
+                            <thead>
+                                <tr>
+                                    <th>Respuesta</th>
+                                    <th style="width: 100px; text-align: center;">Correcta</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="text" id="resp0" placeholder="Escriba la respuesta" class="form-control"></td>
+                                    <td style="text-align: center;"><input type="radio" name="correcta" value="0"></td>
+                                </tr>
+                                <tr>
+                                    <td><input type="text" id="resp1" placeholder="Escriba la respuesta" class="form-control"></td>
+                                    <td style="text-align: center;"><input type="radio" name="correcta" value="1"></td>
+                                </tr>
+                                <tr>
+                                    <td><input type="text" id="resp2" placeholder="Escriba la respuesta" class="form-control"></td>
+                                    <td style="text-align: center;"><input type="radio" name="correcta" value="2"></td>
+                                </tr>
+                                <tr>
+                                    <td><input type="text" id="resp3" placeholder="Escriba la respuesta" class="form-control"></td>
+                                    <td style="text-align: center;"><input type="radio" name="correcta" value="3"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="margin-top: 30px;">
+                        <button type="submit" class="btn-base btn-guardar" id="btnSubmit">Guardar</button>
+                        <a href="/profesor/preguntas" class="btn-base btn-cancelar">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        if (!checkAuth()) { throw new Error('No auth'); }
+
+        const pathParts = window.location.pathname.split('/');
+        const editarIndex = pathParts.indexOf('editar');
+        const preguntaId = editarIndex > 0 ? pathParts[editarIndex - 1] : null;
+
+        showLoading();
+        Promise.all([
+            apiFetch('/api/nombre').then(r => r.json()).catch(() => null),
+            apiFetch('/api/temas/todos').then(r => r.json()).catch(() => []),
+            preguntaId ? apiFetch(`/api/preguntas/${preguntaId}`).then(r => r.json()).catch(() => null) : Promise.resolve(null)
+        ]).then(([ajustes, temas, pregunta]) => {
+            if (ajustes && ajustes.nombreEmpresa) {
+                document.getElementById('nombreEmpresa').textContent = ajustes.nombreEmpresa;
+            }
+
+            const select = document.getElementById('temaId');
+            temas.filter(t => t.activo !== false).forEach(t => {
+                select.innerHTML += `<option value="${t.id}">${t.nombre}</option>`;
+            });
+
+            if (pregunta) {
+                document.getElementById('pageTitle').textContent = 'Editar Pregunta - Autoescuela';
+                document.getElementById('tituloForm').textContent = 'Editar Pregunta';
+                document.getElementById('btnSubmit').textContent = 'Guardar Cambios';
+                document.getElementById('preguntaId').value = pregunta.id;
+                document.getElementById('textoPregunta').value = pregunta.texto || '';
+                document.getElementById('explicacion').value = pregunta.explicacion || '';
+                if (pregunta.tema) document.getElementById('temaId').value = pregunta.tema.id;
+                if (pregunta.respuestas) {
+                    pregunta.respuestas.forEach((r, idx) => {
+                        if (idx < 4) {
+                            document.getElementById(`resp${idx}`).value = r.texto || '';
+                            if (r.correcta) {
+                                document.querySelector(`input[name="correcta"][value="${idx}"]`).checked = true;
+                            }
+                        }
+                    });
+                }
+            }
+        }).finally(() => hideLoading());
+
+        document.getElementById('preguntaForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const preguntaId = document.getElementById('preguntaId').value;
+            const texto = document.getElementById('textoPregunta').value;
+            const temaId = parseInt(document.getElementById('temaId').value);
+            const explicacion = document.getElementById('explicacion').value;
+
+            // Validar respuestas
+            const respuestasTexto = [];
+            for (let i = 0; i < 4; i++) {
+                const val = document.getElementById(`resp${i}`).value.trim();
+                if (val) respuestasTexto.push(val);
+            }
+
+            if (respuestasTexto.length < 2) {
+                document.getElementById('errorMsg').textContent = 'Debe haber al menos 2 respuestas';
+                document.getElementById('errorMsg').style.display = 'block';
+                return;
+            }
+
+            const radioSeleccionado = document.querySelector('input[name="correcta"]:checked');
+            if (!radioSeleccionado) {
+                document.getElementById('errorMsg').textContent = 'Debe seleccionar una respuesta como correcta';
+                document.getElementById('errorMsg').style.display = 'block';
+                return;
+            }
+
+            const indiceCorrecto = parseInt(radioSeleccionado.value);
+            if (!document.getElementById(`resp${indiceCorrecto}`).value.trim()) {
+                document.getElementById('errorMsg').textContent = 'La respuesta marcada como correcta no puede estar vacía';
+                document.getElementById('errorMsg').style.display = 'block';
+                return;
+            }
+
+            // Construir respuestas con correcta
+            const respuestas = respuestasTexto.map((texto, idx) => ({
+                texto: texto,
+                correcta: idx === indiceCorrecto
+            }));
+
+            const body = {
+                texto: texto,
+                temaId: temaId,
+                explicacion: explicacion || null,
+                respuestas: respuestas
+            };
+
+            try {
+                let response;
+                if (preguntaId) {
+                    response = await apiFetch(`/api/preguntas/${preguntaId}`, {
+                        method: 'PUT',
+                        body: JSON.stringify(body)
+                    });
+                } else {
+                    response = await apiFetch('/api/preguntas', {
+                        method: 'POST',
+                        body: JSON.stringify(body)
+                    });
+                }
+
+                if (response && response.ok) {
+                    window.location.href = '/profesor/preguntas?success=true';
+                } else {
+                    const error = await response.json();
+                    document.getElementById('errorMsg').textContent = error.error || 'Error al guardar';
+                    document.getElementById('errorMsg').style.display = 'block';
+                }
+            } catch (err) {
+                document.getElementById('errorMsg').textContent = 'Error de conexión';
+                document.getElementById('errorMsg').style.display = 'block';
+            }
+        });
+
+    </script>
+</body>
+</html>

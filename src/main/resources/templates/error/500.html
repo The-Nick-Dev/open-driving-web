@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Error Interno - 500</title>
+    <link rel="stylesheet" href="/css/login.css">
+    <link rel="stylesheet" href="/css/error.css">
+    <script src="/js/jwt-helper.js"></script>
+</head>
+<body class="error-500">
+    <div class="error-container">
+        <h1>500</h1>
+        <h2>Algo salió mal...</h2>
+        <p>El servidor ha tenido un problema inesperado. Estamos trabajando para solucionarlo. Inténtalo de nuevo más tarde.</p>
+        <a href="/login" class="btn-back">Volver al Login</a>
+    </div>
+    <script>
+        if (isAuthenticated()) {
+            document.querySelector('.btn-back').href = '/alumno/dashboard';
+            if (getUser() && getUser().rol === 'ADMIN') {
+                document.querySelector('.btn-back').href = '/admin/dashboard';
+            } else if (getUser() && getUser().rol === 'PROFESOR') {
+                document.querySelector('.btn-back').href = '/profesor/temas';
+            }
+        }
+    </script>
+</body>
+</html>

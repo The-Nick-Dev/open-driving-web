@@ -1,0 +1,173 @@
+.tema-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.tema-info {
+    flex: 1;
+}
+
+.tema-info h3 {
+    margin: 0 0 5px 0;
+    color: #333;
+}
+
+.tema-info p {
+    margin: 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.tema-stats {
+    font-size: 0.85rem;
+    color: #28a745;
+    margin-top: 5px;
+}
+
+.tema-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-editar-tema {
+    background-color: #ffc107;
+    color: #333;
+    padding: 8px 16px;
+    border-radius: 5px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-eliminar-tema {
+    background-color: #dc3545;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    max-width: 500px;
+    width: 90%;
+}
+
+.modal-content h3 {
+    margin-top: 0;
+}
+
+.modal-content input,
+.modal-content textarea {
+    width: 100%;
+    padding: 8px;
+    margin: 10px 0;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.respuestas-tabla {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.respuestas-tabla th {
+    background: #f8f9fa;
+    padding: 10px;
+    text-align: left;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.respuestas-tabla td {
+    padding: 10px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.respuestas-tabla input[type="text"] {
+    width: 97%;
+    padding: 8px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+.respuestas-tabla input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.btn-nuevo {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    display: inline-block;
+    margin-bottom: 20px;
+    border: none;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: normal;
+    box-sizing: border-box;
+    vertical-align: middle;
+    cursor: pointer;
+}
+
+.btn-editar {
+    background-color: #ffc107;
+    color: #333;
+    padding: 5px 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 0.85rem;
+    margin-right: 5px;
+}
+
+.btn-eliminar {
+    background-color: #dc3545;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.badge-tema {
+    background-color: #e7f3ff;
+    color: #0066cc;
+    padding: 3px 10px;
+    border-radius: 15px;
+    font-size: 0.75rem;
+}

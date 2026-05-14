@@ -1,0 +1,454 @@
+/* admin.css - Estilos base y componentes comunes */
+:root {
+    --admin-bg-color: #f8f9fa;
+    --sidebar-bg: #343a40;
+    --sidebar-text: #adb5bd;
+    --sidebar-hover-bg: #495057;
+    --sidebar-active-text: #ffffff;
+    --header-bg: #ffffff;
+    --header-border: #e9ecef;
+    --card-bg: #ffffff;
+    --border-color: #dee2e6;
+    --primary-color: #2563eb;
+    --primary-hover: #1d4ed8;
+    --input-border: #d1d5db;
+    --input-focus: #2563eb;
+    --input-focus-ring: rgba(37, 99, 235, 0.1);
+}
+
+body.admin-layout {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    background-color: var(--admin-bg-color);
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 250px;
+    background-color: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    padding: 20px 0;
+    display: flex;
+    flex-direction: column;
+    
+    position: sticky;
+    top: 0;
+    height: 98vh;
+}
+
+.sidebar h3 {
+    color: var(--sidebar-active-text);
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 1.5rem;
+    padding: 0 15px;
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar ul li a {
+    display: block;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    padding: 12px 20px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.sidebar ul li a:hover,
+.sidebar ul li a.active {
+    background-color: var(--sidebar-hover-bg);
+    color: var(--sidebar-active-text);
+}
+
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    background-color: var(--header-bg);
+    padding: 15px 30px;
+    border-bottom: 1px solid var(--header-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    color: #343a40;
+}
+
+.header .user-info {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.header .user-info strong {
+    color: var(--primary-color);
+}
+
+.content-area {
+    padding: 30px;
+    flex-grow: 1;
+}
+
+.card {
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    padding: 25px;
+    margin-bottom: 20px;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.card-header h3 {
+    margin: 0;
+    color: var(--primary-color);
+    font-size: 1.3rem;
+}
+
+.card h3 {
+    color: var(--primary-color);
+    margin-top: 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+table th, table td {
+    border: 1px solid var(--border-color);
+    padding: 12px;
+    text-align: left;
+}
+
+table th {
+    background-color: var(--admin-bg-color);
+    font-weight: 600;
+    color: #495057;
+}
+
+table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.empty-state {
+    padding: 40px 20px;
+    text-align: center;
+    color: #6c757d;
+    font-size: 1.1rem;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.button-group button,
+.button-group a,
+button.btn-primary,
+button.btn-danger,
+button.btn-secondary,
+a.btn-primary,
+a.btn-secondary,
+a.btn-danger {
+    padding: 8px 15px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.button-group .btn-small,
+button.btn-small,
+a.btn-small {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+}
+
+.button-group .btn-primary,
+button.btn-primary,
+a.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.button-group .btn-primary:hover,
+button.btn-primary:hover,
+a.btn-primary:hover {
+    background-color: var(--primary-hover);
+}
+
+.button-group .btn-secondary,
+button.btn-secondary,
+a.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.button-group .btn-secondary:hover,
+button.btn-secondary:hover,
+a.btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+.button-group .btn-danger,
+button.btn-danger,
+a.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.button-group .btn-danger:hover,
+button.btn-danger:hover,
+a.btn-danger:hover {
+    background-color: #c82333;
+}
+
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.badge-admin {
+    background-color: #e7d4f5;
+    color: #6f42c1;
+}
+
+.badge-profesor {
+    background-color: #cfe2ff;
+    color: #084298;
+}
+
+.badge-alumno {
+    background-color: #d1e7dd;
+    color: #0f5132;
+}
+
+/* Logout Button */
+.logout-form {
+    padding: 10px 20px;
+    text-align: center;
+    border-top: 1px solid #495057;
+    margin-top: auto;
+    
+    position: sticky;
+    bottom: 0;
+    background-color: var(--sidebar-bg);
+}
+
+.logout-form button {
+    background-color: #dc3545;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    width: 100%;
+    transition: background-color 0.2s;
+}
+
+.logout-form button:hover {
+    background-color: #c82333;
+}
+
+/* Formularios comunes */
+.form-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.form-group h4 {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select, .filtro-tema select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+}
+
+.form-control {
+    width: 95%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #1f2937;
+    background-color: #ffffff;
+    border: 2px solid var(--input-border);
+    border-radius: 8px;
+    transition: all 0.2s ease-in-out;
+    font-family: inherit;
+    flex: 1;
+}
+
+.form-control:hover {
+    border-color: #9ca3af;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--input-focus);
+    box-shadow: 0 0 0 3px var(--input-focus-ring);
+}
+
+.form-control::placeholder {
+    color: #9ca3af;
+    font-size: 0.9rem;
+}
+
+.form-control:disabled {
+    background-color: #e9ecef;
+    color: #999;
+}
+
+.form-group small {
+    display: block;
+    margin-top: 4px;
+    color: #666;
+    font-size: 12px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 30px;
+}
+
+/* Botones genéricos */
+.btn-base {
+    display: inline-block;
+    padding: 12px 30px;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    border: none; 
+    font-family: inherit;
+    font-size: inherit; 
+    line-height: normal;
+    box-sizing: border-box;
+    vertical-align: middle;
+}
+
+.btn-guardar {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-cancelar {
+    background-color: #6c757d;
+    color: white;
+}
+
+/* Alertas */
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 12px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 12px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+/* Ayuda texto */
+.ayuda-texto {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-top: 5px;
+}
+
+/* Acciones de cabecera */
+.header-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+/* Filtros */
+.filtro-tema {
+    background: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.btn-filtrar {
+    display: inline-block;
+    text-align: center;
+    vertical-align: middle;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    font-family: inherit; 
+    font-size: 1rem;
+    line-height: normal;
+    box-sizing: border-box;
+}

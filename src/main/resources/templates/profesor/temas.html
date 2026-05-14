@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Temas - Autoescuela</title>
+    <link rel="icon" type="image/x-icon" href="/images/logo.ico">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/profesor.css">
+    <script src="/js/jwt-helper.js"></script>
+</head>
+<body class="admin-layout">
+    <div class="sidebar">
+        <h3 id="nombreEmpresa"></h3>
+        <ul>
+            <li><a href="/profesor/preguntas">Preguntas</a></li>
+            <li><a href="/profesor/temas" class="active">Temas</a></li>
+        </ul>
+        <div class="logout-form">
+            <button type="button" onclick="logout()" class="btn-primary" style="width:100%;">Cerrar sesión</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Gestión de Temas</h1>
+        </div>
+
+        <div id="successMsg" style="display:none; padding:15px; background:#d4edda; color:#155724; border-radius:5px; margin-bottom:15px;"></div>
+        <div id="errorMsg" style="display:none; padding:15px; background:#f8d7da; color:#721c24; border-radius:5px; margin-bottom:15px;"></div>
+
+        <div class="content-area">
+            <button class="btn-nuevo" onclick="abrirModalNuevo()">Nuevo Tema</button>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Listado de Temas</h3>
+                    <span id="totalTemas" style="color:#666;">0 temas</span>
+                </div>
+                
+                <div id="temasContainer"></div>
+                <div id="emptyState" style="display:none; text-align:center; padding:20px;">
+                    <p>No hay temas disponibles.</p>
+                    <button class="btn-nuevo" onclick="abrirModalNuevo()" style="margin-top:15px;">Crear primer tema</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para crear/editar tema -->
+    <div id="temaModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Nuevo Tema</h3>
+            <form id="temaForm">
+                <input type="hidden" id="temaId" value=""/>
+                <div>
+                    <p>Nombre del tema *</p>
+                    <input type="text" id="temaNombre" required placeholder="Ej: Normativa General"/>
+                </div>
+                <div>
+                    <p>Descripción</p>
+                    <textarea id="temaDescripcion" rows="3" placeholder="Breve descripción del tema"></textarea>
+                </div>
+                <div>
+                    <p>Orden de visualización</p>
+                    <input type="number" id="temaOrden" value="0" min="0"/>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn-base btn-cancelar" onclick="cerrarModal()">Cancelar</button>
+                    <button type="submit" class="btn-base btn-guardar">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        if (!checkAuth()) { throw new Error('No auth'); }
+
+        function renderizarTemas(temas) {
+            if (!temas || temas.error) {
+                document.getElementById('errorMsg').textContent = 'Error al cargar temas';
+                document.getElementById('errorMsg').style.display = 'block';
+                return;
+            }
+
+            const temasActivos = temas.filter(t => t.activo !== false);
+            document.getElementById('totalTemas').textContent = temasActivos.length + ' temas';
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('temasContainer').innerHTML = '';
+
+            if (temasActivos.length === 0) {
+                document.getElementById('emptyState').style.display = 'block';
+                return;
+            }
+
+            const container = document.getElementById('temasContainer');
+            temasActivos.forEach(tema => {
+                const nombreEsc = JSON.stringify(tema.nombre);
+                const descEsc = JSON.stringify(tema.descripcion || '');
+                container.innerHTML += `
+                    <div class="tema-card">
+                        <div class="tema-info">
+                            <h3>${tema.nombre}</h3>
+                            <p>${tema.descripcion || ''}</p>
+                        </div>
+                        <div class="tema-actions">
+                            <button class="btn-editar-tema" onclick='editarTema(${tema.id}, ${nombreEsc}, ${descEsc}, ${tema.orden || 0})'>
+                                Editar
+                            </button>
+                            <button onclick='eliminarTema(${tema.id}, ${nombreEsc})' class="btn-eliminar-tema">Eliminar</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function cargarTemas() {
+            apiFetch('/api/temas/todos').then(r => r.json()).then(renderizarTemas).catch(() => {
+                document.getElementById('errorMsg').textContent = 'Error de conexión';
+                document.getElementById('errorMsg').style.display = 'block';
+            });
+        }
+
+        function abrirModalNuevo() {
+            document.getElementById('modalTitle').textContent = 'Nuevo Tema';
+            document.getElementById('temaId').value = '';
+            document.getElementById('temaNombre').value = '';
+            document.getElementById('temaDescripcion').value = '';
+            document.getElementById('temaOrden').value = '0';
+            document.getElementById('temaModal').style.display = 'flex';
+        }
+
+        function editarTema(id, nombre, descripcion, orden) {
+            document.getElementById('modalTitle').textContent = 'Editar Tema';
+            document.getElementById('temaId').value = id;
+            document.getElementById('temaNombre').value = nombre;
+            document.getElementById('temaDescripcion').value = descripcion || '';
+            document.getElementById('temaOrden').value = orden || 0;
+            document.getElementById('temaModal').style.display = 'flex';
+        }
+
+        function cerrarModal() {
+            document.getElementById('temaModal').style.display = 'none';
+        }
+
+        document.getElementById('temaForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('temaId').value;
+            const nombre = document.getElementById('temaNombre').value;
+            const descripcion = document.getElementById('temaDescripcion').value;
+            const orden = parseInt(document.getElementById('temaOrden').value) || 0;
+
+            const body = { nombre, descripcion, orden, activo: true };
+
+            try {
+                let response;
+                if (id) {
+                    response = await apiFetch(`/api/temas/${id}`, {
+                        method: 'PUT',
+                        body: JSON.stringify(body)
+                    });
+                } else {
+                    response = await apiFetch('/api/temas', {
+                        method: 'POST',
+                        body: JSON.stringify(body)
+                    });
+                }
+
+                if (response && response.ok) {
+                    cerrarModal();
+                    cargarTemas();
+                } else {
+                    alert('Error al guardar tema');
+                }
+            } catch (err) {
+                alert('Error de conexión');
+            }
+        });
+
+        async function eliminarTema(id, nombre) {
+            if (!confirm(`¿Estás seguro de eliminar el tema "${nombre}"? Se eliminarán también todas sus preguntas.`)) return;
+
+            const response = await apiFetch(`/api/temas/${id}`, { method: 'DELETE' });
+            if (response && response.ok) {
+                cargarTemas();
+            } else {
+                alert('Error al eliminar tema');
+            }
+        }
+
+        // Cerrar modal al hacer clic fuera
+        window.onclick = function(event) {
+            const modal = document.getElementById('temaModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        showLoading();
+        Promise.all([
+            apiFetch('/api/nombre').then(r => r.json()).catch(() => null),
+            apiFetch('/api/temas/todos').then(r => r.json()).catch(() => [])
+        ]).then(([ajustes, temas]) => {
+            if (ajustes && ajustes.nombreEmpresa) {
+                document.getElementById('nombreEmpresa').textContent = ajustes.nombreEmpresa;
+            }
+            renderizarTemas(temas);
+        }).finally(() => hideLoading());
+    </script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajustes - Autoescuela</title>
+    <link rel="icon" type="image/x-icon" href="/images/logo.ico">
+    <link rel="stylesheet" href="/css/admin.css">
+    <script src="/js/jwt-helper.js"></script>
+</head>
+<body class="admin-layout">
+
+    <div class="sidebar">
+        <h3 id="nombreEmpresa"></h3>
+        <ul>
+            <li><a href="/admin/dashboard">Panel principal</a></li>
+            <li><a href="/admin/usuarios">Usuarios</a></li>
+            <li><a href="/admin/ajustes" class="active">Ajustes</a></li>
+        </ul>
+        <div class="logout-form">
+            <button type="button" onclick="logout()" class="btn-primary" style="width:100%;">Cerrar sesión</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Ajustes del Sistema</h1>
+        </div>
+
+        <div class="content-area">
+            <div id="mensaje" style="display:none; padding:15px; border-radius:5px; margin-bottom:15px;"></div>
+            <div id="errorMsg" style="display:none; padding:15px; background:#f8d7da; color:#721c24; border-radius:5px; margin-bottom:15px;"></div>
+
+            <div class="card">
+                <h3>Configuración de la Empresa</h3>
+                <label for="nombreEmpresa">Nombre Comercial:</label>
+                <input type="text" id="nombreEmpresaInput" class="form-control">
+            </div>
+
+            <div class="card">
+                <h3>Configuración de Correo (SMTP)</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label for="mailHost">Servidor:</label>
+                        <input type="text" id="mailHost" class="form-control">
+                    </div>
+                    <div>
+                        <label for="mailPort">Puerto:</label>
+                        <input type="number" id="mailPort" class="form-control">
+                    </div>
+                    <div>
+                        <label for="mailUsername">Usuario:</label>
+                        <input type="text" id="mailUsername" class="form-control">
+                    </div>
+                    <div>
+                        <label for="mailPassword">Contraseña:</label>
+                        <input type="password" id="mailPassword" class="form-control" placeholder="Dejar en blanco para mantener">
+                    </div>
+                    <div>
+                        <label for="mailProtocol">Seguridad:</label>
+                        <select id="mailProtocol" class="form-control">
+                            <option value="NONE">Sin cifrado</option>
+                            <option value="SSL">SSL/TLS</option>
+                            <option value="STARTTLS">STARTTLS</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <button type="button" onclick="guardarAjustes()" class="btn-primary" style="margin-top: 20px;">Guardar Cambios</button>
+
+            <div class="card" style="margin-top:20px;">
+                <h3>Prueba de Conexión</h3>
+                <p>Envía un correo de prueba para verificar la configuración.</p>
+                <div style="display:flex; gap:10px;">
+                    <input type="email" id="testEmail" placeholder="Tu correo aquí" required 
+                        style="flex-grow:1; padding:10px; border:1px solid var(--border-color); border-radius:5px;">
+                    <button type="button" onclick="enviarPrueba()" class="btn-secondary">Enviar Prueba</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        if (!checkAuth()) { throw new Error('No auth'); }
+
+        let ajustesId = null;
+
+        function cargarAjustes() {
+            showLoading();
+            apiFetch('/api/ajustes').then(r => r.json()).then(data => {
+                if (data && !data.error) {
+                    ajustesId = data.id || 1;
+                    document.getElementById('nombreEmpresaInput').value = data.nombreEmpresa || '';
+                    document.getElementById('mailHost').value = data.mailHost || '';
+                    document.getElementById('mailPort').value = data.mailPort || '';
+                    document.getElementById('mailUsername').value = data.mailUsername || '';
+                    document.getElementById('mailProtocol').value = data.mailProtocol || 'NONE';
+                    document.getElementById('nombreEmpresa').textContent = data.nombreEmpresa || '';
+                }
+            }).catch(() => {}).finally(() => hideLoading());
+        }
+
+        async function guardarAjustes() {
+            const body = {
+                nombreEmpresa: document.getElementById('nombreEmpresaInput').value,
+                mailHost: document.getElementById('mailHost').value,
+                mailPort: parseInt(document.getElementById('mailPort').value) || 587,
+                mailUsername: document.getElementById('mailUsername').value,
+                mailProtocol: document.getElementById('mailProtocol').value
+            };
+
+            const password = document.getElementById('mailPassword').value;
+            if (password) body.mailPassword = password;
+
+            const response = await apiFetch('/api/ajustes', {
+                method: 'PUT',
+                body: JSON.stringify(body)
+            });
+
+            if (response && response.ok) {
+                document.getElementById('mensaje').style.display = 'block';
+                document.getElementById('mensaje').style.backgroundColor = '#d4edda';
+                document.getElementById('mensaje').style.color = '#155724';
+                document.getElementById('mensaje').textContent = 'Cambios guardados correctamente';
+                setTimeout(() => document.getElementById('mensaje').style.display = 'none', 3000);
+                cargarAjustes();
+            } else {
+                document.getElementById('errorMsg').textContent = 'Error al guardar';
+                document.getElementById('errorMsg').style.display = 'block';
+            }
+        }
+
+        async function enviarPrueba() {
+            const email = document.getElementById('testEmail').value;
+            if (!email) { alert('Introduce un correo'); return; }
+
+            const response = await apiFetch('/api/ajustes/test-email', {
+                method: 'POST',
+                body: JSON.stringify({ testEmail: email })
+            });
+
+            if (response && response.ok) {
+                alert('Correo de prueba enviado');
+            } else {
+                alert('Error al enviar correo de prueba');
+            }
+        }
+
+        cargarAjustes();
+    </script>
+</body>
+</html>

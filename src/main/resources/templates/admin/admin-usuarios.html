@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestionar Usuarios - Autoescuela</title>
+    <link rel="icon" type="image/x-icon" href="/images/logo.ico">
+    <link rel="stylesheet" href="/css/admin.css">
+    <script src="/js/jwt-helper.js"></script>
+</head>
+<body class="admin-layout">
+
+    <div class="sidebar">
+        <h3 id="nombreEmpresa"></h3>
+        <ul>
+            <li><a href="/admin/dashboard">Panel principal</a></li>
+            <li><a href="/admin/usuarios" class="active">Usuarios</a></li>
+            <li><a href="/admin/ajustes">Ajustes</a></li>
+        </ul>
+        <div class="logout-form">
+            <button type="button" onclick="logout()" class="btn-primary" style="width:100%;">Cerrar sesión</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Gestión de Usuarios</h1>
+        </div>
+
+        <div class="content-area">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Lista de Usuarios</h3>
+                    <a href="/admin/usuarios/nuevo" class="btn-primary">+ Añadir Usuario</a>
+                </div>
+                
+                <div id="emptyState" style="display:none; text-align:center; padding:20px;">
+                    <p>No hay usuarios registrados.</p>
+                </div>
+
+                <table id="usuariosTable" style="display:none;">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Usuario</th>
+                            <th>Nombre</th>
+                            <th>Correo</th>
+                            <th>Rol</th>
+                            <th>Fecha Expiración</th>
+                            <th>Fecha Creación</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usuariosBody"></tbody>
+                </table>
+
+                <div id="errorMsg" style="display:none; padding:15px; background:#f8d7da; color:#721c24; border-radius:5px;"></div>
+            </div>
+
+            <div class="card">
+                <h3>Resumen de Usuarios</h3>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; text-align: center;">
+                    <div style="padding: 15px; background: #e0f7fa; border-radius: 8px;">
+                        <h4>Total Usuarios</h4>
+                        <p id="totalUsuarios" style="font-size: 2em; margin: 5px 0; color: #007bff;">0</p>
+                    </div>
+                    <div style="padding: 15px; background: #e8f5e9; border-radius: 8px;">
+                        <h4>Total Profesores</h4>
+                        <p id="totalProfesores" style="font-size: 2em; margin: 5px 0; color: #28a745;">0</p>
+                    </div>
+                    <div style="padding: 15px; background: #fff3e0; border-radius: 8px;">
+                        <h4>Total Alumnos</h4>
+                        <p id="totalAlumnos" style="font-size: 2em; margin: 5px 0; color: #ffc107;">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        if (!checkAuth()) { throw new Error('No auth'); }
+
+        function renderizarUsuarios(usuarios) {
+            if (!usuarios || usuarios.error) {
+                document.getElementById('errorMsg').textContent = 'Error al cargar usuarios';
+                document.getElementById('errorMsg').style.display = 'block';
+                return;
+            }
+
+            if (usuarios.length === 0) {
+                document.getElementById('emptyState').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('usuariosTable').style.display = 'table';
+            const tbody = document.getElementById('usuariosBody');
+            tbody.innerHTML = '';
+
+            let totalProfesores = 0, totalAlumnos = 0;
+
+            usuarios.forEach(u => {
+                if (u.rol === 'PROFESOR') totalProfesores++;
+                if (u.rol === 'ALUMNO') totalAlumnos++;
+
+                const fechaExp = u.fechaExpiracion ? new Date(u.fechaExpiracion).toLocaleDateString('es-ES') : 'Sin expiración';
+                const fechaCre = new Date(u.fechaCreacion).toLocaleString('es-ES');
+                const rolClass = u.rol ? u.rol.toLowerCase() : '';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${u.id}</td>
+                        <td>${u.username}</td>
+                        <td>${u.nombre || ''}</td>
+                        <td>${u.correo || ''}</td>
+                        <td><span class="badge badge-${rolClass}">${u.rol}</span></td>
+                        <td>${fechaExp}</td>
+                        <td>${fechaCre}</td>
+                        <td>
+                            <div class="button-group">
+                                <a href="/admin/usuarios/${u.id}/editar" class="btn-primary btn-small">Editar</a>
+                                <button onclick='eliminarUsuario(${u.id}, ${JSON.stringify(u.username)})' class="btn-danger btn-small">Eliminar</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('totalUsuarios').textContent = usuarios.length;
+            document.getElementById('totalProfesores').textContent = totalProfesores;
+            document.getElementById('totalAlumnos').textContent = totalAlumnos;
+        }
+
+        function cargarUsuarios() {
+            apiFetch('/api/usuarios').then(r => r.json()).then(renderizarUsuarios).catch(() => {
+                document.getElementById('errorMsg').textContent = 'Error de conexión';
+                document.getElementById('errorMsg').style.display = 'block';
+            });
+        }
+
+        function eliminarUsuario(id, username) {
+            if (!confirm(`¿Estás seguro de que deseas eliminar al usuario ${username}?`)) return;
+
+            apiFetch(`/api/usuarios/${id}`, { method: 'DELETE' }).then(r => {
+                if (r && r.ok) {
+                    cargarUsuarios();
+                } else {
+                    alert('Error al eliminar usuario');
+                }
+            });
+        }
+
+        showLoading();
+        Promise.all([
+            apiFetch('/api/nombre').then(r => r.json()).catch(() => null),
+            apiFetch('/api/usuarios').then(r => r.json()).catch(() => [])
+        ]).then(([ajustes, usuarios]) => {
+            if (ajustes && ajustes.nombreEmpresa) {
+                document.getElementById('nombreEmpresa').textContent = ajustes.nombreEmpresa;
+            }
+            renderizarUsuarios(usuarios);
+        }).finally(() => hideLoading());
+    </script>
+</body>
+</html>

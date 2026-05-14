@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Realizando Test - Autoescuela</title>
+    <link rel="icon" type="image/x-icon" href="/images/logo.ico">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/alumno.css">
+    <script src="/js/jwt-helper.js"></script>
+</head>
+<body class="admin-layout">
+    <div class="sidebar">
+        <h3 id="nombreEmpresa"></h3>
+        <ul>
+            <li><a href="/alumno/dashboard">Mi Progreso</a></li>
+        </ul>
+        <div class="logout-form">
+            <button type="button" onclick="logout()" class="btn-primary" style="width:100%;">Cerrar sesión</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Realizando Test</h1>
+            <div class="user-info" id="temaNombre">Tema</div>
+        </div>
+
+        <div class="content-area">
+            <div class="test-info" style="position:sticky; top:0; z-index:100; background:#fff; box-shadow:0 2px 6px rgba(0,0,0,0.08); border-radius:8px; margin-bottom:16px;">
+                <div class="test-header">
+                    <div>
+                        <strong>Progreso:</strong> 
+                        <span id="progresoTexto">0/0 preguntas respondidas</span>
+                    </div>
+                    <div>
+                        <strong>Tiempo:</strong>
+                        <span id="timer">00:00:00</span>
+                    </div>
+                    <div>
+                        <strong>Completado:</strong> 
+                        <span id="porcentajeCompletado">0%</span>
+                    </div>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar" style="width: 0%;">0%</div>
+                </div>
+            </div>
+
+            <div id="preguntasContainer"></div>
+
+            <div style="text-align: center; margin-top:20px;">
+                <button type="button" id="btnFinalizar" class="btn-finalizar" onclick="completarTest()" style="display:none;">
+                    Finalizar Test
+                </button>
+                <p id="avisoPreguntas" style="color:#666; margin-top:10px;">⚠️ Asegúrate de haber respondido todas las preguntas</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        if (!checkAuth()) { throw new Error('No auth'); }
+
+        const pathParts = window.location.pathname.split('/');
+        const isAleatorio = pathParts.includes('aleatorio');
+        const temaId = isAleatorio ? null : pathParts[pathParts.length - 1];
+        let testId = null;
+        let totalPreguntas = 0;
+        let respondidas = 0;
+        let preguntasData = [];
+        let testCompletado = false;
+
+        window.addEventListener('beforeunload', (e) => {
+            if (!testCompletado) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+
+        async function iniciarTest() {
+            try {
+                const apiUrl = isAleatorio ? '/api/test/iniciar-aleatorio' : `/api/test/iniciar/${temaId}`;
+                const initResponse = await apiFetch(apiUrl, { method: 'POST' });
+                if (!initResponse || !initResponse.ok) {
+                    alert('Error al iniciar el test');
+                    window.location.href = '/alumno/dashboard';
+                    return;
+                }
+                const initData = await initResponse.json();
+                testId = initData.testId;
+                totalPreguntas = initData.totalPreguntas;
+                document.getElementById('temaNombre').textContent = initData.tema || 'Test';
+
+                const progresoResponse = await apiFetch(`/api/test/${testId}`);
+                if (!progresoResponse || !progresoResponse.ok) {
+                    alert('Error al cargar las preguntas');
+                    window.location.href = '/alumno/dashboard';
+                    return;
+                }
+                const progresoData = await progresoResponse.json();
+                preguntasData = progresoData.preguntas || [];
+
+                document.getElementById('progresoTexto').textContent = `0/${totalPreguntas} preguntas respondidas`;
+                renderizarPreguntas();
+            } catch (err) {
+                alert('Error al conectar con el servidor');
+                window.location.href = '/alumno/dashboard';
+            }
+        }
+
+        function renderizarPreguntas() {
+            const container = document.getElementById('preguntasContainer');
+            container.innerHTML = '';
+
+            preguntasData.forEach((p, index) => {
+                const preguntaHtml = `
+                    <div class="pregunta-card" id="card_${p.pregunta.id}">
+                        <div class="pregunta-texto">
+                            <strong>${index + 1}.</strong>
+                            <span>${p.pregunta.texto}</span>
+                        </div>
+                        <div id="form_${p.pregunta.id}" data-pregunta-id="${p.pregunta.id}">
+                            ${p.respuestas.map(r => `
+                                <label class="respuesta-opcion" id="label_${r.id}">
+                                    <input type="radio" 
+                                           name="respuesta_${p.pregunta.id}" 
+                                           value="${r.id}" 
+                                           onclick="guardarRespuesta(${p.pregunta.id}, ${r.id}, this)"
+                                           class="respuesta-radio"/>
+                                    <span class="respuesta-texto">${r.texto}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += preguntaHtml;
+            });
+        }
+
+        async function guardarRespuesta(preguntaId, respuestaId, radioEl) {
+            try {
+                const response = await apiFetch(`/api/test/${testId}/responder`, {
+                    method: 'POST',
+                    body: JSON.stringify({ preguntaId: preguntaId, respuestaId: respuestaId })
+                });
+
+                if (response && response.ok) {
+                    // Marcar visualmente
+                    const labels = document.querySelectorAll(`#form_${preguntaId} .respuesta-opcion`);
+                    labels.forEach(l => l.classList.remove('seleccionada'));
+                    radioEl.closest('.respuesta-opcion').classList.add('seleccionada');
+
+                    // Actualizar progreso
+                    if (!yaRespondidas.has(preguntaId)) {
+                        yaRespondidas.add(preguntaId);
+                        respondidas++;
+                        actualizarProgreso();
+                    }
+                }
+            } catch (err) {
+                console.error('Error al guardar respuesta:', err);
+            }
+        }
+
+        const yaRespondidas = new Set();
+
+        function actualizarProgreso() {
+            const pct = Math.round((respondidas / totalPreguntas) * 100);
+            document.getElementById('progresoTexto').textContent = `${respondidas}/${totalPreguntas} preguntas respondidas`;
+            document.getElementById('porcentajeCompletado').textContent = pct + '%';
+            
+            const bar = document.getElementById('progressBar');
+            bar.style.width = pct + '%';
+            bar.textContent = pct + '%';
+
+            const btnFinalizar = document.getElementById('btnFinalizar');
+            const aviso = document.getElementById('avisoPreguntas');
+            
+            if (respondidas >= totalPreguntas) {
+                btnFinalizar.style.display = 'inline-block';
+                aviso.style.display = 'none';
+            }
+        }
+
+        async function completarTest() {
+            if (!confirm('¿Estás seguro de que quieres finalizar el test? No podrás modificar las respuestas después.')) {
+                return;
+            }
+
+            try {
+                const response = await apiFetch(`/api/test/${testId}/completar`, { method: 'POST' });
+                if (response && response.ok) {
+                    testCompletado = true;
+                    window.location.href = `/alumno/test/${testId}/resultado`;
+                }
+            } catch (err) {
+                alert('Error al completar el test');
+            }
+        }
+
+        // Timer
+        let startTime = new Date().getTime();
+        setInterval(() => {
+            let elapsed = Math.floor((new Date() - startTime) / 1000);
+            let hours = Math.floor(elapsed / 3600);
+            let minutes = Math.floor((elapsed % 3600) / 60);
+            let seconds = elapsed % 60;
+            document.getElementById('timer').innerText = 
+                `${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
+        }, 1000);
+
+        iniciarTest();
+
+        apiFetch('/api/nombre').then(r => r.json()).then(data => {
+        if (data && data.nombreEmpresa) {
+            document.getElementById('nombreEmpresa').textContent = data.nombreEmpresa;
+        }}).catch(() => {})
+    </script>
+</body>
+</html>

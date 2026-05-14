@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración</title>
+    <link rel="icon" type="image/x-icon" href="/images/logo.ico">
+    <link rel="stylesheet" href="/css/admin.css">
+    <script src="/js/jwt-helper.js"></script>
+</head>
+<body class="admin-layout">
+
+    <div class="sidebar">
+        <h3 id="nombreEmpresa"></h3>
+        <ul>
+            <li><a href="/admin/dashboard" class="active">Panel principal</a></li>
+            <li><a href="/admin/usuarios">Usuarios</a></li>
+            <li><a href="/admin/ajustes">Ajustes</a></li>
+        </ul>
+        <div class="logout-form">
+            <button type="button" onclick="logout()" class="btn-primary" style="width:100%;">Cerrar sesión</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Dashboard de Administración</h1>
+            <div class="user-info">
+                Bienvenido, <strong id="nombreUsuario"></strong>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="card">
+                <h3>Accesos Rápidos</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                    <a href="/admin/usuarios" style="padding: 15px; background: #f8f9fa; border-radius: 8px; text-decoration: none; color: #333; border-left: 4px solid #007bff;">
+                        <h4>Gestionar Usuarios</h4>
+                        <p>Crear, editar y eliminar usuarios del sistema</p>
+                    </a>
+                    <a href="/admin/usuarios/nuevo" style="padding: 15px; background: #f8f9fa; border-radius: 8px; text-decoration: none; color: #333; border-left: 4px solid #28a745;">
+                        <h4>Añadir Usuario</h4>
+                        <p>Crear un nuevo usuario en la plataforma</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        if (!checkAuth()) { throw new Error('No auth'); }
+
+        const user = getUser();
+        if (user) {
+            document.getElementById('nombreUsuario').textContent = user.nombre || user.username;
+        }
+
+        showLoading();
+        apiFetch('/api/nombre').then(r => r.json()).then(data => {
+            if (data && data.nombreEmpresa) {
+                document.getElementById('nombreEmpresa').textContent = data.nombreEmpresa;
+            }
+        }).catch(() => {}).finally(() => hideLoading());
+    </script>
+</body>
+</html>

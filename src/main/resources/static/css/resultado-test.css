@@ -1,0 +1,130 @@
+.resultado-hero {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.resultado-score {
+    flex: 0 0 160px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    padding: 24px 16px;
+    color: #fff;
+    text-align: center;
+}
+
+.resultado-score .score-num {
+    font-size: 3rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.resultado-score .score-label {
+    font-size: 0.85rem;
+    margin-top: 6px;
+    opacity: 0.9;
+}
+
+.resultado-score.apto {
+    background: #28a745;
+}
+
+.resultado-score.no-apto {
+    background: #dc3545;
+}
+
+.resultado-stat-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
+}
+
+.resultado-stat {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+    border: 1px solid #dee2e6;
+}
+
+.resultado-stat .val {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #343a40;
+}
+
+.resultado-stat .lbl {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-top: 4px;
+}
+
+.q-row {
+    display: flex;
+    gap: 10px;
+    padding: 14px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    align-items: flex-start;
+}
+
+.q-row:last-child {
+    border-bottom: none;
+}
+
+.q-num {
+    flex: 0 0 28px;
+    font-weight: 600;
+    color: #6c757d;
+    padding-top: 2px;
+}
+
+.q-body {
+    flex: 1;
+}
+
+.q-texto {
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.q-respuesta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.88rem;
+    margin-bottom: 4px;
+}
+
+.q-respuesta.correcta-alumno {
+    background: #d4edda;
+    color: #155724;
+}
+
+.q-respuesta.incorrecta-alumno {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.q-respuesta.respuesta-correcta {
+    background: #cce5ff;
+    color: #004085;
+    font-weight: 600;
+}
+
+.q-explicacion {
+    font-size: 0.82rem;
+    color: #6c757d;
+    margin-top: 6px;
+    font-style: italic;
+}
+
+.icono {
+    font-size: 1rem;
+}

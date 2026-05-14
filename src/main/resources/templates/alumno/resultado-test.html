@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultado del Test - Autoescuela</title>
+    <link rel="icon" type="image/x-icon" href="/images/logo.ico">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/alumno.css">
+    <script src="/js/jwt-helper.js"></script>
+    <link rel="stylesheet" href="/css/resultado-test.css">
+</head>
+<body class="admin-layout">
+    <div class="sidebar">
+        <h3 id="nombreEmpresa"></h3>
+        <ul>
+            <li><a href="/alumno/dashboard">Mi Progreso</a></li>
+        </ul>
+        <div class="logout-form">
+            <button type="button" onclick="logout()" class="btn-primary" style="width:100%;">Cerrar sesión</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Resultado del Test</h1>
+            <div class="user-info" id="temaNombre"></div>
+        </div>
+
+        <div class="content-area">
+            <div id="resumenContainer"></div>
+
+            <div class="card" style="margin-top:20px;">
+                <div class="card-header">
+                    <h3>Detalle de respuestas</h3>
+                </div>
+                <div id="detalleContainer"></div>
+            </div>
+
+            <div style="text-align:center; margin:24px 0;">
+                <a href="/alumno/dashboard" class="btn-test" style="padding:12px 32px; font-size:1rem;">
+                    Volver al panel
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        if (!checkAuth()) { throw new Error('No auth'); }
+
+        const testId = window.location.pathname.split('/')[3];
+
+        apiFetch('/api/nombre').then(r => r.json()).then(d => {
+            if (d && d.nombreEmpresa) document.getElementById('nombreEmpresa').textContent = d.nombreEmpresa;
+        }).catch(() => {});
+
+        showLoading();
+        apiFetch(`/api/test/${testId}`)
+            .then(r => r.json())
+            .then(data => {
+                if (!data || data.error) {
+                    document.getElementById('resumenContainer').innerHTML =
+                        '<p style="color:#dc3545; text-align:center;">No se pudo cargar el resultado.</p>';
+                    return;
+                }
+                document.getElementById('temaNombre').textContent = data.temaNombre || 'Test';
+                renderResumen(data);
+                renderDetalle(data);
+            })
+            .catch(() => {
+                document.getElementById('resumenContainer').innerHTML =
+                    '<p style="color:#dc3545; text-align:center;">Error de conexión.</p>';
+            })
+            .finally(() => hideLoading());
+
+        function renderResumen(data) {
+            const apto = data.puntuacion >= 70;
+            document.getElementById('resumenContainer').innerHTML = `
+                <div class="resultado-hero">
+                    <div class="resultado-score ${apto ? 'apto' : 'no-apto'}">
+                        <div class="score-num">${data.puntuacion}%</div>
+                        <div class="score-label">${apto ? '✓ APTO' : '✗ NO APTO'}</div>
+                    </div>
+                    <div class="resultado-stat-grid">
+                        <div class="resultado-stat">
+                            <div class="val" style="color:#28a745;">${data.aciertos}</div>
+                            <div class="lbl">Aciertos</div>
+                        </div>
+                        <div class="resultado-stat">
+                            <div class="val" style="color:#dc3545;">${data.fallos}</div>
+                            <div class="lbl">Fallos</div>
+                        </div>
+                        <div class="resultado-stat">
+                            <div class="val">${data.totalPreguntas}</div>
+                            <div class="lbl">Total preguntas</div>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        function renderDetalle(data) {
+            const container = document.getElementById('detalleContainer');
+            if (!data.preguntas || data.preguntas.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#6c757d; padding:20px;">Sin datos.</p>';
+                return;
+            }
+
+            const correctaId = r => r.esCorrecta === true ? r.id : null;
+
+            container.innerHTML = data.preguntas.map((p, i) => {
+                const selId = p.respuestaSeleccionadaId;
+                const respCorrecta = p.respuestas.find(r => r.esCorrecta === true);
+                const fueCorrecta = p.fueCorrecta === true;
+                const icono = fueCorrecta ? '✓' : '✗';
+
+                const respuestasHtml = p.respuestas.map(r => {
+                    const esSeleccionada = r.id === selId;
+                    const esCorrecta = r.esCorrecta === true;
+                    let cls = '';
+                    let label = '';
+                    if (esSeleccionada && fueCorrecta) { cls = 'correcta-alumno'; }
+                    else if (esSeleccionada && !fueCorrecta) { cls = 'incorrecta-alumno'; }
+                    else if (!esSeleccionada && esCorrecta && !fueCorrecta) { cls = 'respuesta-correcta'; }
+                    else return '';
+                    return `<div class="q-respuesta ${cls}">${r.texto}${label}</div>`;
+                }).join('');
+
+                const explicacion = (p.pregunta.explicacion && !fueCorrecta)
+                    ? `<div class="q-explicacion">Pista: ${p.pregunta.explicacion}</div>` : '';
+
+                return `
+                    <div class="q-row">
+                        <div class="q-num">${i + 1}.</div>
+                        <div class="q-body">
+                            <div class="q-texto">${p.pregunta.texto}</div>
+                            ${respuestasHtml}
+                            ${explicacion}
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+    </script>
+</body>
+</html>

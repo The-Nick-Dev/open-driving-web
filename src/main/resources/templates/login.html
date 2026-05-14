@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Inicio de sesión</title>
+    <link rel="icon" type="image/x-icon" href="/images/logo.ico">
+    <link rel="stylesheet" href="/css/login.css">
+    <script src="/js/jwt-helper.js?v=2"></script>
+</head>
+<body>
+
+    <div class="login-container">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <img src="/images/logo.png" alt="Logo Autoescuela" style="width: 80px; height: 80px;">
+        </div>
+        <h2 id="nombreEmpresa"></h2>
+        
+        <div id="errorMsg" class="alert alert-error" style="display:none;">
+            Usuario o contraseña incorrectos.
+        </div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <h4>Usuario o correo</h4>
+                <input type="text" id="username" name="username" required autofocus/>
+            </div>
+            <div class="form-group">
+                <h4>Contraseña</h4>
+                <input type="password" id="password" name="password" required/>
+            </div>
+            <button type="submit">Iniciar Sesión</button>
+        </form>
+    </div>
+
+    <script>
+        // Limpiar token corrupto si existe
+        try {
+            if (isAuthenticated()) {
+                const role = getRole();
+                if (!role || !['ADMIN', 'PROFESOR', 'ALUMNO'].includes(role)) {
+                    console.warn('Token corrupto detectado, limpiando...');
+                    removeToken();
+                }
+            }
+        } catch(e) {
+            console.error('Error al verificar token:', e);
+            removeToken();
+        }
+        
+        // NO redirigir automáticamente desde login
+        // La redirección solo ocurre después del login exitoso
+
+        // Cargar nombre de empresa
+        apiFetch('/api/nombre').then(r => r && r.json()).then(data => {
+            if (data && data.nombreEmpresa) {
+                document.getElementById('nombreEmpresa').textContent = data.nombreEmpresa;
+            }
+        }).catch(() => {});
+
+        // Login form
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('errorMsg');
+            errorDiv.style.display = 'none';
+            
+            try {
+                await login(username, password);
+                redirectByRole();
+            } catch (err) {
+                if (err.message) {
+                    errorDiv.textContent = err.message;
+                } else {
+                    errorDiv.textContent = 'Usuario o contraseña incorrectos.';
+                }
+                errorDiv.style.display = 'block';
+            }
+        });
+
+    </script>
+</body>
+</html>

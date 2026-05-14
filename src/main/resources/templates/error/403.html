@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Acceso Denegado - 403</title>
+    <link rel="stylesheet" href="/css/login.css">
+    <link rel="stylesheet" href="/css/error.css">
+    <script src="/js/jwt-helper.js"></script>
+</head>
+<body class="error-403">
+    <div class="error-container">
+        <h1>403</h1>
+        <h2>¡No puedes pasar!</h2>
+        <p>No tienes los permisos necesarios para acceder a este recurso. Por favor, vuelve al inicio o inicia sesión con otra cuenta.</p>
+        <a href="/login" class="btn-back">Volver al Login</a>
+    </div>
+    <script>
+        if (isAuthenticated()) {
+            document.querySelector('.btn-back').href = '/alumno/dashboard';
+            if (getUser() && getUser().rol === 'ADMIN') {
+                document.querySelector('.btn-back').href = '/admin/dashboard';
+            } else if (getUser() && getUser().rol === 'PROFESOR') {
+                document.querySelector('.btn-back').href = '/profesor/temas';
+            }
+        }
+    </script>
+</body>
+</html>
